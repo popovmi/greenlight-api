@@ -5,8 +5,8 @@ import (
 	"net/http"
 )
 
-func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+func (self *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "status: available\n")
-	fmt.Fprintf(w, "environment: %s\n", app.config.env)
+	fmt.Fprintf(w, "environment: %s\n", self.config.env)
 	fmt.Fprintf(w, "version: %s\n", version)
 }
