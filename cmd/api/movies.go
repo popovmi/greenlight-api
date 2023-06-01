@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -9,13 +8,25 @@ import (
 )
 
 func (self *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "create movie handler")
+	var input struct {
+		Title   string   `json:"title"`
+		Year    int32    `json:"year"`
+		Runtime int32    `json:"runtime"`
+		Genres  []string `json:"genres"`
+	}
+
+	err := self.readJSON(w, r, &input)
+	if err != nil {
+		self.badRequestResponse(w, r, err)
+		return
+	}
+	self.writeJSON(w, http.StatusOK, envelope{"movie": input}, nil)
 }
 
 func (self *application) getMovieHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := self.readIDParam(r)
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		self.notFoundResponse(w, r)
 		return
 	}
 
@@ -30,7 +41,6 @@ func (self *application) getMovieHandler(w http.ResponseWriter, r *http.Request)
 
 	err = self.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
 	if err != nil {
-		self.logger.Println(err)
-		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+		self.serverErrorResponse(w, r, err)
 	}
 }
