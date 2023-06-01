@@ -20,7 +20,7 @@ func (self *application) readIDParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (self *application) writeJson(w http.ResponseWriter, status int, data interface{}, headers http.Header) error {
+func (self *application) writeJSON(w http.ResponseWriter, status int, data interface{}, headers http.Header) error {
 	js, err := json.Marshal(data)
 	if err != nil {
 		self.logger.Println(err)
