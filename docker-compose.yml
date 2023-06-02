@@ -1,0 +1,31 @@
+services:
+    greenlight_db:
+        image: postgres
+        environment:
+            - POSTGRES_USER=greenlight_app
+            - POSTGRES_PASSWORD=greenlight_app
+            - POSTGRES_DB=greenlight_db
+        volumes:
+            - greenlight_db_volume_local:/var/lib/postgresql/data:rw"
+        ports:
+            - "5432:5432"
+    greenlight_db_test:
+        image: postgres
+        environment:
+            - POSTGRES_USER=greenlight_app
+            - POSTGRES_PASSWORD=greenlight_app
+            - POSTGRES_DB=greenlight_db
+        volumes:
+            - greenlight_db_test_volume_local:/var/lib/postgresql/data:rw"
+        ports:
+            - "5332:5432"
+    pgadmin:
+        image: dpage/pgadmin4
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+            - PGADMIN_DEFAULT_PASSWORD=root
+        ports:
+            - "5433:80"
+volumes:
+    greenlight_db_volume_local:
+    greenlight_db_test_volume_local:

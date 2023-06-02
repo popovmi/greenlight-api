@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "greenlight_db",
+            "database": "greenlight_db",
+            "username": "greenlight_app",
+            "password": "greenlight_app"
+        }
+    ]
+}
