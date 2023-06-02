@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"greenlight.aenkas.org/internal/data"
+	"greenlight.aenkas.org/internal/validator"
 )
 
 func (self *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +21,21 @@ func (self *application) createMovieHandler(w http.ResponseWriter, r *http.Reque
 		self.badRequestResponse(w, r, err)
 		return
 	}
+
+	movie := &data.Movie{
+		Title:   input.Title,
+		Year:    input.Year,
+		Runtime: input.Runtime,
+		Genres:  input.Genres,
+	}
+
+	v := validator.New()
+
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		self.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
 	self.writeJSON(w, http.StatusOK, envelope{"movie": input}, nil)
 }
 
