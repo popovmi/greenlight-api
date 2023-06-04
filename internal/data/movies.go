@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/lib/pq"
@@ -36,39 +37,97 @@ type MovieModel struct {
 	DB *sql.DB
 }
 
-func (m MovieModel) Insert(movie *Movie) error {
-	query := `
-INSERT INTO movies (title, year, runtime, genres) VALUES ($1, $2, $3, $4)
-RETURNING id, created_at, version`
+func (self MovieModel) Insert(movie *Movie) error {
+	query := `INSERT INTO movies (title, year, runtime, genres) VALUES ($1, $2, $3, $4) RETURNING id, created_at, version`
 
-	args := []interface{}{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+	args := []interface{}{movie.Title,
+		movie.Year,
+		movie.Runtime,
+		pq.Array(movie.Genres),
+	}
 
-	return m.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+	return self.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m MovieModel) Get(id int64) (*Movie, error) {
-	return nil, nil
+func (self MovieModel) Get(id int64) (*Movie, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `SELECT id, created_at, title, year, runtime, genres, version FROM movies WHERE id = $1`
+
+	var movie Movie
+
+	err := self.DB.QueryRow(query, id).Scan(
+		&movie.ID,
+		&movie.CreatedAt,
+		&movie.Title,
+		&movie.Year,
+		&movie.Runtime,
+		pq.Array(&movie.Genres),
+		&movie.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+
+	}
+
+	return &movie, nil
 }
 
-func (m MovieModel) Update(movie *Movie) error {
-	return nil
+func (self MovieModel) Update(movie *Movie) error {
+	query := `UPDATE MOVIES SET title = $2, year = $3, runtime = $4, genres = $5, version = version + 1 WHERE id = $1 RETURNING version`
+
+	args := []interface{}{
+		movie.ID,
+		movie.Title,
+		movie.Year,
+		movie.Runtime,
+		pq.Array(movie.Genres),
+	}
+
+	return self.DB.QueryRow(query, args...).Scan(&movie.Version)
 }
 
-func (m MovieModel) Delete(id int64) error {
+func (self MovieModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `DELETE FROM MOVIES WHERE id = $1`
+	result, err := self.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
 	return nil
 }
 
 type MockMovieModel struct{}
 
-func (m MockMovieModel) Insert(movie *Movie) error {
+func (self MockMovieModel) Insert(movie *Movie) error {
 	return nil
 }
-func (m MockMovieModel) Get(id int64) (*Movie, error) {
+func (self MockMovieModel) Get(id int64) (*Movie, error) {
 	return nil, nil
 }
-func (m MockMovieModel) Update(movie *Movie) error {
+func (self MockMovieModel) Update(movie *Movie) error {
 	return nil
 }
-func (m MockMovieModel) Delete(id int64) error {
+func (self MockMovieModel) Delete(id int64) error {
 	return nil
 }
