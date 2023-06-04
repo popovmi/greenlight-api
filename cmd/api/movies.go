@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"greenlight.aenkas.org/internal/data"
 	"greenlight.aenkas.org/internal/validator"
@@ -94,6 +95,13 @@ func (self *application) updateMovieHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if r.Header.Get("X-Expected-Version") != "" {
+		if strconv.FormatInt(int64(movie.Version), 32) != r.Header.Get("X-Expected-Version") {
+			self.editConflictResponse(w, r)
+			return
+		}
+	}
+
 	var input struct {
 		Title   *string       `json:"title"`
 		Year    *int32        `json:"year"`
@@ -133,7 +141,7 @@ func (self *application) updateMovieHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
-			self.editConfilctResponse(w, r)
+			self.editConflictResponse(w, r)
 		default:
 			self.serverErrorResponse(w, r, err)
 		}
