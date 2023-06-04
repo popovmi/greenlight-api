@@ -1,6 +1,7 @@
 package data
 
 import (
+	"math"
 	"strings"
 
 	"greenlight.aenkas.org/internal/validator"
@@ -13,17 +14,47 @@ type ListParams struct {
 	SortSafelist []string
 }
 
-func (f ListParams) sortColumn() string {
-	for _, safeValue := range f.SortSafelist {
-		if f.Sort == safeValue {
-			return strings.TrimPrefix(f.Sort, "-")
-		}
-	}
-	panic("unsafe sort parameter: " + f.Sort)
+type Metadata struct {
+	CurrentPage  int `json:"currentPage,omitempty"`
+	PageSize     int `json:"pageSize,omitempty"`
+	FirstPage    int `json:"firstPage,omitempty"`
+	LastPage     int `json:"lastPage,omitempty"`
+	TotalRecords int `json:"totalRecords,omitempty"`
 }
 
-func (f ListParams) sortDirection() string {
-	if strings.HasPrefix(f.Sort, "-") {
+func getMetadata(totalRecords, page, pageSize int) Metadata {
+	if totalRecords == 0 {
+		return Metadata{}
+	}
+
+	return Metadata{
+		CurrentPage:  page,
+		PageSize:     pageSize,
+		FirstPage:    1,
+		LastPage:     int(math.Ceil(float64(totalRecords) / float64(pageSize))),
+		TotalRecords: totalRecords,
+	}
+}
+
+func (self ListParams) limit() int {
+	return self.PageSize
+}
+
+func (self ListParams) offset() int {
+	return (self.Page - 1) * self.PageSize
+}
+
+func (self ListParams) sortColumn() string {
+	for _, safeValue := range self.SortSafelist {
+		if self.Sort == safeValue {
+			return strings.TrimPrefix(self.Sort, "-")
+		}
+	}
+	panic("unsafe sort parameter: " + self.Sort)
+}
+
+func (self ListParams) sortDirection() string {
+	if strings.HasPrefix(self.Sort, "-") {
 		return "DESC"
 	}
 	return "ASC"

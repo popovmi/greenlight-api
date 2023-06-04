@@ -39,30 +39,36 @@ type MovieModel struct {
 	DB *sql.DB
 }
 
-func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, error) {
+func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error) {
 	query := fmt.Sprintf(`
-	SELECT id, title, year, runtime, genres, created_at, version
+	SELECT count(*) OVER(), id, title, year, runtime, genres, created_at, version
 	 FROM MOVIES
 	WHERE 1 = 1
 	  AND (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 	  AND (genres @> $2 OR $2 = '{}')
-	ORDER BY %s %s, id ASC`, lp.sortColumn(), lp.sortDirection())
+	ORDER BY %s %s, id ASC
+	LIMIT $3 OFFSET $4
+	`, lp.sortColumn(), lp.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := self.DB.QueryContext(ctx, query, title, pq.Array(genres))
-	if err != nil {
-		return nil, err
-	}
+	args := []interface{}{title, pq.Array(genres), lp.limit(), lp.offset()}
 
+	rows, err := self.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
 	defer rows.Close()
 
+	totalRecords := 0
 	movies := []*Movie{}
+
 	for rows.Next() {
 		var movie Movie
 
 		err := rows.Scan(
+			&totalRecords,
 			&movie.ID,
 			&movie.Title,
 			&movie.Year,
@@ -72,17 +78,19 @@ func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]
 			&movie.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		movies = append(movies, &movie)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return movies, nil
+	metadata := getMetadata(totalRecords, lp.Page, lp.PageSize)
+
+	return movies, metadata, nil
 }
 
 func (self MovieModel) Insert(movie *Movie) error {
@@ -200,8 +208,8 @@ func (self MovieModel) Delete(id int64) error {
 
 type MockMovieModel struct{}
 
-func (self MockMovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, error) {
-	return nil, nil
+func (self MockMovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error) {
+	return nil, Metadata{}, nil
 }
 func (self MockMovieModel) Insert(movie *Movie) error {
 	return nil

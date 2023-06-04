@@ -12,7 +12,7 @@ var (
 
 type Models struct {
 	Movies interface {
-		GetMany(title string, genres []string, lp ListParams) ([]*Movie, error)
+		GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error)
 		Insert(movie *Movie) error
 		Get(id int64) (*Movie, error)
 		Update(movie *Movie) error

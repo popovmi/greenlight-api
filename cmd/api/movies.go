@@ -18,7 +18,6 @@ func (self *application) getMoviesHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
-
 	qs := r.URL.Query()
 
 	input.Title = self.readString(qs, "title", "")
@@ -34,13 +33,13 @@ func (self *application) getMoviesHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	movies, err := self.models.Movies.GetMany(input.Title, input.Genres, input.ListParams)
+	movies, metadata, err := self.models.Movies.GetMany(input.Title, input.Genres, input.ListParams)
 	if err != nil {
 		self.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = self.writeJSON(w, http.StatusOK, envelope{"movies": movies}, nil)
+	err = self.writeJSON(w, http.StatusOK, envelope{"movies": movies, "metadata": metadata}, nil)
 	if err != nil {
 		self.serverErrorResponse(w, r, err)
 	}
