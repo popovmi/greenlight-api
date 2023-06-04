@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (self *application) routes() *httprouter.Router {
+func (self *application) routes() http.Handler {
 	router := httprouter.New()
 
 	router.NotFound = http.HandlerFunc(self.notFoundResponse)
@@ -20,5 +20,5 @@ func (self *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", self.updateMovieHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", self.deleteMovieHandler)
 
-	return router
+	return self.recoverPanic(router)
 }
