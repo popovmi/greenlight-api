@@ -16,7 +16,7 @@ func (self *application) routes() *httprouter.Router {
 
 	router.HandlerFunc(http.MethodPost, "/v1/movies", self.createMovieHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", self.getMovieHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/movies/:id", self.updateMovieHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", self.updateMovieHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", self.deleteMovieHandler)
 
 	return router

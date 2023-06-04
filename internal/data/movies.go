@@ -38,7 +38,9 @@ type MovieModel struct {
 }
 
 func (self MovieModel) Insert(movie *Movie) error {
-	query := `INSERT INTO movies (title, year, runtime, genres) VALUES ($1, $2, $3, $4) RETURNING id, created_at, version`
+	query := `INSERT INTO movies (title, year, runtime, genres) 
+	VALUES ($1, $2, $3, $4) 
+	RETURNING id, created_at, version`
 
 	args := []interface{}{movie.Title,
 		movie.Year,
@@ -54,7 +56,9 @@ func (self MovieModel) Get(id int64) (*Movie, error) {
 		return nil, ErrRecordNotFound
 	}
 
-	query := `SELECT id, created_at, title, year, runtime, genres, version FROM movies WHERE id = $1`
+	query := `SELECT id, created_at, title, year, runtime, genres, version 
+	FROM movies 
+	WHERE id = $1`
 
 	var movie Movie
 
@@ -113,7 +117,10 @@ func (self MovieModel) Delete(id int64) error {
 		return ErrRecordNotFound
 	}
 
-	query := `DELETE FROM MOVIES WHERE id = $1`
+	query := `DELETE 
+	FROM MOVIES 
+	WHERE id = $1`
+
 	result, err := self.DB.Exec(query, id)
 	if err != nil {
 		return err
