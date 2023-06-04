@@ -81,7 +81,10 @@ func (self MovieModel) Get(id int64) (*Movie, error) {
 }
 
 func (self MovieModel) Update(movie *Movie) error {
-	query := `UPDATE MOVIES SET title = $2, year = $3, runtime = $4, genres = $5, version = version + 1 WHERE id = $1 RETURNING version`
+	query := `UPDATE MOVIES 
+	SET title = $2, year = $3, runtime = $4, genres = $5, version = version + 1 
+	WHERE id = $1 and version = $6 
+	RETURNING version`
 
 	args := []interface{}{
 		movie.ID,
@@ -89,9 +92,20 @@ func (self MovieModel) Update(movie *Movie) error {
 		movie.Year,
 		movie.Runtime,
 		pq.Array(movie.Genres),
+		movie.Version,
 	}
 
-	return self.DB.QueryRow(query, args...).Scan(&movie.Version)
+	err := self.DB.QueryRow(query, args...).Scan(&movie.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (self MovieModel) Delete(id int64) error {
