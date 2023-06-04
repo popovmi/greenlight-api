@@ -1,12 +1,32 @@
 package data
 
-import "greenlight.aenkas.org/internal/validator"
+import (
+	"strings"
+
+	"greenlight.aenkas.org/internal/validator"
+)
 
 type ListParams struct {
 	Page         int
 	PageSize     int
 	Sort         string
 	SortSafelist []string
+}
+
+func (f ListParams) sortColumn() string {
+	for _, safeValue := range f.SortSafelist {
+		if f.Sort == safeValue {
+			return strings.TrimPrefix(f.Sort, "-")
+		}
+	}
+	panic("unsafe sort parameter: " + f.Sort)
+}
+
+func (f ListParams) sortDirection() string {
+	if strings.HasPrefix(f.Sort, "-") {
+		return "DESC"
+	}
+	return "ASC"
 }
 
 func ValidateListParams(v *validator.Validator, p ListParams) {

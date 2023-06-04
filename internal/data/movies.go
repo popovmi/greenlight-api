@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -39,12 +40,13 @@ type MovieModel struct {
 }
 
 func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, error) {
-	query := `SELECT id, title, year, runtime, genres, created_at, version
-	FROM MOVIES
+	query := fmt.Sprintf(`
+	SELECT id, title, year, runtime, genres, created_at, version
+	 FROM MOVIES
 	WHERE 1 = 1
 	  AND (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 	  AND (genres @> $2 OR $2 = '{}')
-	ORDER BY id`
+	ORDER BY %s %s, id ASC`, lp.sortColumn(), lp.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
