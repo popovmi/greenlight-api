@@ -38,6 +38,51 @@ type MovieModel struct {
 	DB *sql.DB
 }
 
+func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, error) {
+	query := `SELECT id, title, year, runtime, genres, created_at, version
+	FROM MOVIES
+	WHERE 1 = 1
+	  AND (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+	  AND (genres @> $2 OR $2 = '{}')
+	ORDER BY id`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := self.DB.QueryContext(ctx, query, title, pq.Array(genres))
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	movies := []*Movie{}
+	for rows.Next() {
+		var movie Movie
+
+		err := rows.Scan(
+			&movie.ID,
+			&movie.Title,
+			&movie.Year,
+			&movie.Runtime,
+			pq.Array(&movie.Genres),
+			&movie.CreatedAt,
+			&movie.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		movies = append(movies, &movie)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return movies, nil
+}
+
 func (self MovieModel) Insert(movie *Movie) error {
 	query := `INSERT INTO movies (title, year, runtime, genres) 
 	VALUES ($1, $2, $3, $4) 
@@ -153,6 +198,9 @@ func (self MovieModel) Delete(id int64) error {
 
 type MockMovieModel struct{}
 
+func (self MockMovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, error) {
+	return nil, nil
+}
 func (self MockMovieModel) Insert(movie *Movie) error {
 	return nil
 }

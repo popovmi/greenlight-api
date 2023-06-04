@@ -10,6 +10,42 @@ import (
 	"greenlight.aenkas.org/internal/validator"
 )
 
+func (self *application) getMoviesHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title  string
+		Genres []string
+		data.ListParams
+	}
+
+	v := validator.New()
+
+	qs := r.URL.Query()
+
+	input.Title = self.readString(qs, "title", "")
+	input.Genres = self.readCSV(qs, "genres", []string{})
+
+	input.ListParams.Page = self.readInt(qs, "page", 1, v)
+	input.ListParams.PageSize = self.readInt(qs, "pageSize", 20, v)
+	input.ListParams.Sort = self.readString(qs, "sort", "id")
+	input.ListParams.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+
+	if data.ValidateListParams(v, input.ListParams); !v.Valid() {
+		self.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	movies, err := self.models.Movies.GetMany(input.Title, input.Genres, input.ListParams)
+	if err != nil {
+		self.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = self.writeJSON(w, http.StatusOK, envelope{"movies": movies}, nil)
+	if err != nil {
+		self.serverErrorResponse(w, r, err)
+	}
+}
+
 func (self *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title   string       `json:"title"`
