@@ -47,6 +47,13 @@ func (self *application) signupUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	self.background(func() {
+		err = self.mailer.Send(user.Email, "user_welcome.html", user)
+		if err != nil {
+			self.logger.PrintError(err, nil)
+		}
+	})
+
 	err = self.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
 	if err != nil {
 		self.serverErrorResponse(w, r, err)
