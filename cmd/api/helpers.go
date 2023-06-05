@@ -130,11 +130,15 @@ func (self *application) readInt(qs url.Values, key string, defaultValue int, v 
 	return i
 }
 
-func (app *application) background(fn func()) {
+func (self *application) background(fn func()) {
+	self.wg.Add(1)
+
 	go func() {
+		defer self.wg.Done()
+
 		defer func() {
 			if err := recover(); err != nil {
-				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+				self.logger.PrintError(fmt.Errorf("%s", err), nil)
 			}
 		}()
 		fn()
