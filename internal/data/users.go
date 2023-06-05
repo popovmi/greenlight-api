@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"time"
@@ -178,6 +179,46 @@ func (self UserModel) Update(user *User) error {
 	return nil
 }
 
+func (self UserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlainText))
+	query := `
+	SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.version
+	FROM users u
+	INNER JOIN tokens t
+	ON u.id = t.user_id
+	WHERE 1 = 1 
+	 AND t.hash = $1
+	 AND t.scope = $2
+	 AND t.expiry > $3
+	`
+	args := []interface{}{tokenHash[:], scope, time.Now()}
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := self.DB.QueryRowContext(ctx, query, args...).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Name,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
 type MockUserModel struct{}
 
 func (self MockUserModel) Insert(user *User) error {
@@ -190,4 +231,8 @@ func (self MockUserModel) GetByEmail(email string) (*User, error) {
 
 func (self MockUserModel) Update(user *User) error {
 	return nil
+}
+
+func (self MockUserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
+	return nil, nil
 }
