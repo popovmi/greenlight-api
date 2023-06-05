@@ -121,25 +121,29 @@ func (self *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		r = self.contextSetUser(r, user)
+		next.ServeHTTP(w, r)
+	})
+}
 
+func (self *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := self.contextGetUser(r)
+		if user.IsAnonymous() {
+			self.authenticationRequiredResponse(w, r)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
 
 func (self *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := self.contextGetUser(r)
-
-		if user.IsAnonymous() {
-			self.authenticationRequiredResponse(w, r)
-			return
-		}
-
 		if !user.Activated {
 			self.inactiveAccountResponse(w, r)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
+	return self.requireAuthenticatedUser(fn)
 }
