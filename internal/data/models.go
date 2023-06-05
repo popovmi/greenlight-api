@@ -11,6 +11,11 @@ var (
 )
 
 type Models struct {
+	Users interface {
+		Insert(user *User) error
+		GetByEmail(email string) (*User, error)
+		Update(user *User) error
+	}
 	Movies interface {
 		GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error)
 		Insert(movie *Movie) error
@@ -22,12 +27,14 @@ type Models struct {
 
 func NewModels(db *sql.DB) *Models {
 	return &Models{
+		Users:  UserModel{DB: db},
 		Movies: MovieModel{DB: db},
 	}
 }
 
 func NewMockModels() Models {
 	return Models{
+		Users:  MockUserModel{},
 		Movies: MockMovieModel{},
 	}
 }
