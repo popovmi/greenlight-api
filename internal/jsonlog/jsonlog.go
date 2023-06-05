@@ -50,6 +50,10 @@ func New(out io.Writer, minLevel Level) *Logger {
 	}
 }
 
+func (self *Logger) PrintDebug(message string, properties map[string]string) {
+	self.print(LevelDebug, message, properties)
+}
+
 func (self *Logger) PrintInfo(message string, properties map[string]string) {
 	self.print(LevelInfo, message, properties)
 }
