@@ -1,13 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
+	"greenlight.aenkas.org/internal/data"
+	"greenlight.aenkas.org/internal/validator"
 )
 
 func (self *application) recoverPanic(next http.Handler) http.Handler {
@@ -24,7 +28,6 @@ func (self *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (self *application) rateLimit(next http.Handler) http.Handler {
-
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -49,7 +52,6 @@ func (self *application) rateLimit(next http.Handler) http.Handler {
 	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		if self.config.limiter.enabled {
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
@@ -78,5 +80,48 @@ func (self *application) rateLimit(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
 
+func (self *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Add("Vary", "Authorization")
+
+		authorizationHeader := r.Header.Get("Authorization")
+
+		if authorizationHeader == "" {
+			r = self.contextSetUser(r, data.AnonymousUser)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		headerParts := strings.Split(authorizationHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			self.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		token := headerParts[1]
+		v := validator.New()
+
+		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+			self.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		user, err := self.models.Users.GetByToken(token, data.ScopeAuthentication)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				self.invalidAuthenticationTokenResponse(w, r)
+			default:
+				self.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		r = self.contextSetUser(r, user)
+
+		next.ServeHTTP(w, r)
+	})
 }

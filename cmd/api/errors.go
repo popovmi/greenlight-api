@@ -60,3 +60,10 @@ func (self *application) invalidCredentialsResponse(w http.ResponseWriter, r *ht
 	message := "invalid credentials"
 	self.errorResponse(w, r, http.StatusUnauthorized, message)
 }
+
+func (self *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+
+	message := "invalid authentication token"
+	self.errorResponse(w, r, http.StatusUnauthorized, message)
+}
