@@ -17,6 +17,8 @@ func (self *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/users/", self.signupUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activate", self.activateUserHandler)
 
+	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", self.createAuthenticationTokenHandler)
+
 	router.HandlerFunc(http.MethodGet, "/v1/movies", self.getMoviesHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", self.getMovieHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/movies", self.createMovieHandler)
