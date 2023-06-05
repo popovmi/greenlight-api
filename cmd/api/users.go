@@ -32,6 +32,7 @@ func (self *application) signupUserHandler(w http.ResponseWriter, r *http.Reques
 
 	if data.ValidateUser(v, user); !v.Valid() {
 		self.failedValidationResponse(w, r, v.Errors)
+		return
 	}
 
 	err = self.models.Users.Insert(user)
