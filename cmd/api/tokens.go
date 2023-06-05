@@ -25,6 +25,7 @@ func (self *application) createAuthenticationTokenHandler(w http.ResponseWriter,
 
 	data.ValidateEmail(v, input.Email)
 	data.ValidatePassword(v, input.Password)
+
 	if !v.Valid() {
 		self.failedValidationResponse(w, r, v.Errors)
 		return
@@ -46,6 +47,7 @@ func (self *application) createAuthenticationTokenHandler(w http.ResponseWriter,
 		self.serverErrorResponse(w, r, err)
 		return
 	}
+
 	if !match {
 		self.invalidCredentialsResponse(w, r)
 		return
@@ -54,6 +56,7 @@ func (self *application) createAuthenticationTokenHandler(w http.ResponseWriter,
 	token, err := self.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
 	if err != nil {
 		self.serverErrorResponse(w, r, err)
+		return
 	}
 
 	err = self.writeJSON(w, http.StatusCreated, envelope{"token": token}, nil)
