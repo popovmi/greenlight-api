@@ -18,6 +18,10 @@ type Models struct {
 		Update(user *User) error
 		GetByToken(tokenPlainText, scope string) (*User, error)
 	}
+	Permissions interface {
+		GetAllForUser(userID int64) (Permissions, error)
+		GrantForUser(userID int64, permissions ...string) error
+	}
 	Tokens interface {
 		New(userID int64, ttl time.Duration, scope string) (*Token, error)
 		Insert(token *Token) error
@@ -34,16 +38,18 @@ type Models struct {
 
 func NewModels(db *sql.DB) *Models {
 	return &Models{
-		Users:  UserModel{DB: db},
-		Tokens: TokenModel{DB: db},
-		Movies: MovieModel{DB: db},
+		Users:       UserModel{DB: db},
+		Permissions: PermissionModel{DB: db},
+		Tokens:      TokenModel{DB: db},
+		Movies:      MovieModel{DB: db},
 	}
 }
 
 func NewMockModels() Models {
 	return Models{
-		Users:  MockUserModel{},
-		Tokens: MockTokenModel{},
-		Movies: MockMovieModel{},
+		Users:       MockUserModel{},
+		Permissions: MockPermissionModel{},
+		Tokens:      MockTokenModel{},
+		Movies:      MockMovieModel{},
 	}
 }

@@ -53,6 +53,12 @@ func (self *application) signupUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	err = self.models.Permissions.GrantForUser(user.ID, "movies:read")
+	if err != nil {
+		self.serverErrorResponse(w, r, err)
+		return
+	}
+
 	token, err := self.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
 	if err != nil {
 		self.serverErrorResponse(w, r, err)
