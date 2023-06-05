@@ -67,3 +67,13 @@ func (self *application) invalidAuthenticationTokenResponse(w http.ResponseWrite
 	message := "invalid authentication token"
 	self.errorResponse(w, r, http.StatusUnauthorized, message)
 }
+
+func (self *application) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
+	message := "you must be authenticated to access this resource"
+	self.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
+func (self *application) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
+	message := "your user account must be activated to access this resource"
+	self.errorResponse(w, r, http.StatusForbidden, message)
+}

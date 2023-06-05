@@ -19,11 +19,11 @@ func (self *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", self.createAuthenticationTokenHandler)
 
-	router.HandlerFunc(http.MethodGet, "/v1/movies", self.getMoviesHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", self.getMovieHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/movies", self.createMovieHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", self.updateMovieHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", self.deleteMovieHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/movies", self.requireActivatedUser(self.getMoviesHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", self.requireActivatedUser(self.getMovieHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/movies", self.requireActivatedUser(self.createMovieHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", self.requireActivatedUser(self.updateMovieHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", self.requireActivatedUser(self.deleteMovieHandler))
 
 	return self.recoverPanic(self.rateLimit(self.authenticate(router)))
 }
