@@ -25,5 +25,5 @@ func (self *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", self.requirePermission("movies:write", self.updateMovieHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", self.requirePermission("movies:write", self.deleteMovieHandler))
 
-	return self.recoverPanic(self.rateLimit(self.authenticate(router)))
+	return self.recoverPanic(self.enableCORS(self.rateLimit(self.authenticate(router))))
 }

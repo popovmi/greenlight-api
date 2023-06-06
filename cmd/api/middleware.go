@@ -168,3 +168,31 @@ func (self *application) requirePermission(code string, next http.HandlerFunc) h
 
 	return self.requireActivatedUser(fn)
 }
+
+func (self *application) enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Origin")
+		w.Header().Add("Vary", "Access-Control-Request-Method")
+
+		origin := r.Header.Get("Origin")
+
+		if origin != "" && len(self.config.cors.trustedOrigins) != 0 {
+			for i := range self.config.cors.trustedOrigins {
+				if origin == self.config.cors.trustedOrigins[i] {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+
+					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
+						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+						w.Header().Set("Access-Control-Max-Age", "60")
+
+						w.WriteHeader(http.StatusOK)
+						return
+					}
+				}
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
