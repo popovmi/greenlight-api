@@ -1,0 +1,4 @@
+http://194.58.109.118 { 
+	respond /*/metrics "Not Permitted" 403
+	reverse_proxy localhost:4000
+}
