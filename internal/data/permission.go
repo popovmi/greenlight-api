@@ -10,8 +10,8 @@ import (
 
 type Permissions []string
 
-func (self Permissions) Include(code string) bool {
-	for _, p := range self {
+func (p Permissions) Include(code string) bool {
+	for _, p := range p {
 		if p == code {
 			return true
 		}
@@ -24,7 +24,7 @@ type PermissionModel struct {
 	DB *sql.DB
 }
 
-func (self PermissionModel) GetAllForUser(userID int64) (Permissions, error) {
+func (m PermissionModel) GetAllForUser(userID int64) (Permissions, error) {
 	query := `
 	SELECT p.code
 	FROM permissions p
@@ -37,7 +37,7 @@ func (self PermissionModel) GetAllForUser(userID int64) (Permissions, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := self.DB.QueryContext(ctx, query, userID)
+	rows, err := m.DB.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (self PermissionModel) GetAllForUser(userID int64) (Permissions, error) {
 	return permissions, nil
 }
 
-func (self PermissionModel) GrantForUser(userID int64, permissions ...string) error {
+func (m PermissionModel) GrantForUser(userID int64, permissions ...string) error {
 	query := `
 	INSERT INTO users_permissions
 	SELECT $1, permissions.id FROM permissions WHERE permissions.code = ANY($2)`
@@ -71,17 +71,17 @@ func (self PermissionModel) GrantForUser(userID int64, permissions ...string) er
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := self.DB.ExecContext(ctx, query, userID, pq.Array(permissions))
+	_, err := m.DB.ExecContext(ctx, query, userID, pq.Array(permissions))
 
 	return err
 }
 
 type MockPermissionModel struct{}
 
-func (self MockPermissionModel) GetAllForUser(userID int64) (Permissions, error) {
+func (m MockPermissionModel) GetAllForUser(userID int64) (Permissions, error) {
 	return nil, nil
 }
 
-func (self MockPermissionModel) GrantForUser(userID int64, permissions ...string) error {
+func (m MockPermissionModel) GrantForUser(userID int64, permissions ...string) error {
 	return nil
 }

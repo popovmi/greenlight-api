@@ -50,25 +50,25 @@ func New(out io.Writer, minLevel Level) *Logger {
 	}
 }
 
-func (self *Logger) PrintDebug(message string, properties map[string]string) {
-	self.print(LevelDebug, message, properties)
+func (l *Logger) PrintDebug(message string, properties map[string]string) {
+	l.print(LevelDebug, message, properties)
 }
 
-func (self *Logger) PrintInfo(message string, properties map[string]string) {
-	self.print(LevelInfo, message, properties)
+func (l *Logger) PrintInfo(message string, properties map[string]string) {
+	l.print(LevelInfo, message, properties)
 }
 
-func (self *Logger) PrintError(err error, properties map[string]string) {
-	self.print(LevelError, err.Error(), properties)
+func (l *Logger) PrintError(err error, properties map[string]string) {
+	l.print(LevelError, err.Error(), properties)
 }
 
-func (self *Logger) PrintFatal(err error, properties map[string]string) {
-	self.print(LevelFatal, err.Error(), properties)
+func (l *Logger) PrintFatal(err error, properties map[string]string) {
+	l.print(LevelFatal, err.Error(), properties)
 	os.Exit(1)
 }
 
-func (self *Logger) print(level Level, message string, properties map[string]string) (int, error) {
-	if level < self.minLevel {
+func (l *Logger) print(level Level, message string, properties map[string]string) (int, error) {
+	if level < l.minLevel {
 		return 0, nil
 	}
 
@@ -96,12 +96,12 @@ func (self *Logger) print(level Level, message string, properties map[string]str
 		line = []byte(LevelError.String() + ": unable to marshal log message:" + err.Error())
 	}
 
-	self.mu.Lock()
-	defer self.mu.Unlock()
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	return self.out.Write(append(line, '\n'))
+	return l.out.Write(append(line, '\n'))
 }
 
-func (self *Logger) Write(message []byte) (n int, err error) {
-	return self.print(LevelError, string(message), nil)
+func (l *Logger) Write(message []byte) (n int, err error) {
+	return l.print(LevelError, string(message), nil)
 }

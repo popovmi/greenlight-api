@@ -39,7 +39,7 @@ type MovieModel struct {
 	DB *sql.DB
 }
 
-func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error) {
+func (m MovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error) {
 	query := fmt.Sprintf(`
 	SELECT count(*) OVER(), id, title, year, runtime, genres, created_at, version
 	 FROM MOVIES
@@ -55,7 +55,7 @@ func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]
 
 	args := []interface{}{title, pq.Array(genres), lp.limit(), lp.offset()}
 
-	rows, err := self.DB.QueryContext(ctx, query, args...)
+	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
@@ -93,7 +93,7 @@ func (self MovieModel) GetMany(title string, genres []string, lp ListParams) ([]
 	return movies, metadata, nil
 }
 
-func (self MovieModel) Insert(movie *Movie) error {
+func (m MovieModel) Insert(movie *Movie) error {
 	query := `INSERT INTO movies (title, year, runtime, genres) 
 	VALUES ($1, $2, $3, $4) 
 	RETURNING id, created_at, version`
@@ -107,10 +107,10 @@ func (self MovieModel) Insert(movie *Movie) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	return self.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (self MovieModel) Get(id int64) (*Movie, error) {
+func (m MovieModel) Get(id int64) (*Movie, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -124,7 +124,7 @@ func (self MovieModel) Get(id int64) (*Movie, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := self.DB.QueryRowContext(ctx, query, id).Scan(
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&movie.ID,
 		&movie.CreatedAt,
 		&movie.Title,
@@ -146,7 +146,7 @@ func (self MovieModel) Get(id int64) (*Movie, error) {
 	return &movie, nil
 }
 
-func (self MovieModel) Update(movie *Movie) error {
+func (m MovieModel) Update(movie *Movie) error {
 	query := `UPDATE MOVIES 
 	SET title = $2, year = $3, runtime = $4, genres = $5, version = version + 1 
 	WHERE id = $1 and version = $6 
@@ -164,7 +164,7 @@ func (self MovieModel) Update(movie *Movie) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := self.DB.QueryRowContext(ctx, query, args...).Scan(&movie.Version)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -177,7 +177,7 @@ func (self MovieModel) Update(movie *Movie) error {
 	return nil
 }
 
-func (self MovieModel) Delete(id int64) error {
+func (m MovieModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}
@@ -189,7 +189,7 @@ func (self MovieModel) Delete(id int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	result, err := self.DB.ExecContext(ctx, query, id)
+	result, err := m.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
@@ -208,18 +208,18 @@ func (self MovieModel) Delete(id int64) error {
 
 type MockMovieModel struct{}
 
-func (self MockMovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error) {
+func (m MockMovieModel) GetMany(title string, genres []string, lp ListParams) ([]*Movie, Metadata, error) {
 	return nil, Metadata{}, nil
 }
-func (self MockMovieModel) Insert(movie *Movie) error {
+func (m MockMovieModel) Insert(movie *Movie) error {
 	return nil
 }
-func (self MockMovieModel) Get(id int64) (*Movie, error) {
+func (m MockMovieModel) Get(id int64) (*Movie, error) {
 	return nil, nil
 }
-func (self MockMovieModel) Update(movie *Movie) error {
+func (m MockMovieModel) Update(movie *Movie) error {
 	return nil
 }
-func (self MockMovieModel) Delete(id int64) error {
+func (m MockMovieModel) Delete(id int64) error {
 	return nil
 }

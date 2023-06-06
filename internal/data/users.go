@@ -35,14 +35,14 @@ func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
 
-func (self *password) Set(plain string) error {
+func (p *password) Set(plain string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plain), 12)
 	if err != nil {
 		return err
 	}
 
-	self.plain = &plain
-	self.hash = hash
+	p.plain = &plain
+	p.hash = hash
 
 	return nil
 }
@@ -91,7 +91,7 @@ type UserModel struct {
 	DB *sql.DB
 }
 
-func (self UserModel) Insert(user *User) error {
+func (m UserModel) Insert(user *User) error {
 	query := `
 	INSERT INTO users (name, email, password_hash, activated)
 	VALUES ($1, $2, $3, $4)
@@ -103,7 +103,7 @@ func (self UserModel) Insert(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := self.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
@@ -116,7 +116,7 @@ func (self UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (self UserModel) GetByEmail(email string) (*User, error) {
+func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
 	SELECT id, created_at, name, email, password_hash, activated, version
 	FROM users
@@ -128,7 +128,7 @@ func (self UserModel) GetByEmail(email string) (*User, error) {
 
 	var user User
 
-	err := self.DB.QueryRowContext(ctx, query, email).Scan(
+	err := m.DB.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
@@ -149,7 +149,7 @@ func (self UserModel) GetByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (self UserModel) Update(user *User) error {
+func (m UserModel) Update(user *User) error {
 	query := `
 	UPDATE users
 	SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
@@ -169,7 +169,7 @@ func (self UserModel) Update(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := self.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
@@ -184,7 +184,7 @@ func (self UserModel) Update(user *User) error {
 	return nil
 }
 
-func (self UserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
+func (m UserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlainText))
 	query := `
 	SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.version
@@ -203,7 +203,7 @@ func (self UserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := self.DB.QueryRowContext(ctx, query, args...).Scan(
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Name,
@@ -226,18 +226,18 @@ func (self UserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
 
 type MockUserModel struct{}
 
-func (self MockUserModel) Insert(user *User) error {
+func (m MockUserModel) Insert(user *User) error {
 	return nil
 }
 
-func (self MockUserModel) GetByEmail(email string) (*User, error) {
+func (m MockUserModel) GetByEmail(email string) (*User, error) {
 	return nil, nil
 }
 
-func (self MockUserModel) Update(user *User) error {
+func (m MockUserModel) Update(user *User) error {
 	return nil
 }
 
-func (self MockUserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
+func (m MockUserModel) GetByToken(tokenPlainText, scope string) (*User, error) {
 	return nil, nil
 }

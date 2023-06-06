@@ -36,25 +36,25 @@ func getMetadata(totalRecords, page, pageSize int) Metadata {
 	}
 }
 
-func (self ListParams) limit() int {
-	return self.PageSize
+func (lp ListParams) limit() int {
+	return lp.PageSize
 }
 
-func (self ListParams) offset() int {
-	return (self.Page - 1) * self.PageSize
+func (lp ListParams) offset() int {
+	return (lp.Page - 1) * lp.PageSize
 }
 
-func (self ListParams) sortColumn() string {
-	for _, safeValue := range self.SortSafelist {
-		if self.Sort == safeValue {
-			return strings.TrimPrefix(self.Sort, "-")
+func (lp ListParams) sortColumn() string {
+	for _, safeValue := range lp.SortSafelist {
+		if lp.Sort == safeValue {
+			return strings.TrimPrefix(lp.Sort, "-")
 		}
 	}
-	panic("unsafe sort parameter: " + self.Sort)
+	panic("unsafe sort parameter: " + lp.Sort)
 }
 
-func (self ListParams) sortDirection() string {
-	if strings.HasPrefix(self.Sort, "-") {
+func (lp ListParams) sortDirection() string {
+	if strings.HasPrefix(lp.Sort, "-") {
 		return "DESC"
 	}
 	return "ASC"

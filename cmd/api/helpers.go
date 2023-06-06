@@ -16,21 +16,21 @@ import (
 
 type envelope map[string]interface{}
 
-func (self *application) readIDParam(r *http.Request) (int64, error) {
+func (app *application) readIDParam(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
-		return 0, errors.New("Invalid id param")
+		return 0, errors.New("invalid id param")
 	}
 
 	return id, nil
 }
 
-func (self *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.Marshal(data)
 	if err != nil {
-		self.logger.PrintError(err, nil)
+		app.logger.PrintError(err, nil)
 		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
 		return err
 	}
@@ -47,7 +47,7 @@ func (self *application) writeJSON(w http.ResponseWriter, status int, data envel
 	return nil
 }
 
-func (self *application) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
@@ -99,7 +99,7 @@ func (self *application) readJSON(w http.ResponseWriter, r *http.Request, dst in
 	return nil
 }
 
-func (self *application) readString(qs url.Values, key string, defaultValue string) string {
+func (app *application) readString(qs url.Values, key string, defaultValue string) string {
 	s := qs.Get(key)
 	if s == "" {
 		return defaultValue
@@ -107,7 +107,7 @@ func (self *application) readString(qs url.Values, key string, defaultValue stri
 	return s
 }
 
-func (self *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
+func (app *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
 	csv := qs.Get(key)
 	if csv == "" {
 		return defaultValue
@@ -115,7 +115,7 @@ func (self *application) readCSV(qs url.Values, key string, defaultValue []strin
 	return strings.Split(csv, ",")
 }
 
-func (self *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
 	s := qs.Get(key)
 	if s == "" {
 		return defaultValue
@@ -130,15 +130,15 @@ func (self *application) readInt(qs url.Values, key string, defaultValue int, v 
 	return i
 }
 
-func (self *application) background(fn func()) {
-	self.wg.Add(1)
+func (app *application) background(fn func()) {
+	app.wg.Add(1)
 
 	go func() {
-		defer self.wg.Done()
+		defer app.wg.Done()
 
 		defer func() {
 			if err := recover(); err != nil {
-				self.logger.PrintError(fmt.Errorf("%s", err), nil)
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
 			}
 		}()
 		fn()
