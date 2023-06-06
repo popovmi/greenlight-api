@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -25,5 +26,7 @@ func (self *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", self.requirePermission("movies:write", self.updateMovieHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", self.requirePermission("movies:write", self.deleteMovieHandler))
 
-	return self.recoverPanic(self.enableCORS(self.rateLimit(self.authenticate(router))))
+	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
+
+	return self.metrics(self.recoverPanic(self.enableCORS(self.rateLimit(self.authenticate(router)))))
 }
