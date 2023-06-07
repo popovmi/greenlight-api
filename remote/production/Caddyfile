@@ -1,4 +1,8 @@
-http://greenlight.popovmi.space { 
+{
+	email mi69popov@gmail.com
+}
+
+greenlight.popovmi.space { 
 	respond /*/metrics "Not Permitted" 403
 	reverse_proxy localhost:4000
 }
