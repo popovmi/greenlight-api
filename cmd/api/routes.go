@@ -17,8 +17,10 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/users/", app.signupUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activate", app.activateUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/password", app.requireActivatedUser(app.updateUserPasswordHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/tokens/password-reset", app.requireActivatedUser(app.createPasswordResetTokenHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/movies", app.requirePermission("movies:read", app.getMoviesHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", app.requirePermission("movies:read", app.getMovieHandler))
